@@ -42,8 +42,9 @@ class CosineWarmUp:
 
     def get_lr(self):
         if self.last_iter < self.warmup_iters:
-            self.learning_rate = self.warmup_init_lr + self.base_lr * \
-                self.warmup_iters * self.last_iter
+            self.learning_rate = self.warmup_init_lr + \
+                                 (self.base_lr - self.warmup_init_lr) / self.warmup_iters * self.last_iter
+
         else:
 
             self.learning_rate = self.target_lr + (self.base_lr - self.target_lr) * \
@@ -106,7 +107,7 @@ def get_c_r_naive_duan(image):
     for i in cnts:
         x, y, w, h = cv.boundingRect(i)
 
-        if 1030 <= h <= 1110 and 1030 <= w <= 1110:
+        if 1030 <= h <= 1130 and 1030 <= w <= 1130:
             # print(w, h, x, y)
             c = (int(x + w / 2), int(y + h / 2))
             r = int(w // 2)
