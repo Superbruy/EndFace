@@ -36,8 +36,13 @@ class ModelTrainer:
             # update weights
             optimizer.step()
 
-            # statistics
-            pred = torch.argmax(output.data, dim=1)
+            # statistics, 0 for good, 1 for bad, add threshold for good to improve precision
+            datapred, pred = torch.argmax(output.data, dim=1)
+            for k in range(len(pred)):
+                if pred[k] == 0:
+                    if datapred[k] < 0.6:
+                        pred[k] = 1
+
             for j in range(len(label)):
                 cate_i = label[j].cpu().numpy()
                 pred_i = pred[j].cpu().numpy()
@@ -70,7 +75,11 @@ class ModelTrainer:
                 loss = loss_fn(outputs, labels)
 
                 # 统计预测信息
-                _, predicted = torch.max(outputs.data, 1)
+                datapred, predicted = torch.max(outputs.data, 1)
+                for k in range(len(predicted)):
+                    if predicted[k] == 0:
+                        if datapred[k] < 0.6:
+                            predicted[k] = 1
 
                 # 统计混淆矩阵
                 for j in range(len(labels)):
