@@ -9,6 +9,9 @@ from torch.optim.optimizer import Optimizer
 from math import pi, cos
 import cv2 as cv
 import numpy as np
+from PIL import Image
+
+import os
 
 class CosineWarmUp:
     '''
@@ -137,10 +140,39 @@ class GenerateDuan:
             right_bottom_corner = (center[0] + radius, center[1] + radius)
         image = image.crop((left_up_corner[0], left_up_corner[1], right_bottom_corner[0], right_bottom_corner[1]))
 
-        image = image.resize((1024, 1024))
+        image = image.resize((512, 512))
 
         return {'image': image, 'label': label}
 
+class MixUp:
+    '''
+    each bad sample has a probability to mix up
+    '''
+    def __init__(self, p, good_root):
+        self.p = p
+        self.root = good_root
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+
+        # good sample do not need to mix up
+        if label == 0:
+            return {'image': image, 'label': label}
+
+        # load good image randomly
+        good_list = os.listdir(self.root)
+        idx = np.random.choice(good_list)
+        good_img_path = os.path.join(self.root, idx)
+        good_sample = cv.imread(good_img_path)
+
+        # mix up
+        lam = np.random.beta(1., 1.)
+        bad_sample = np.array(image)
+        mix_image = (good_sample*lam + bad_sample*(1-lam)).astype(np.uint8)
+        mix_image = cv.cvtColor(mix_image, cv.COLOR_BGR2RGB)
+        mix_image = Image.fromarray(mix_image).convert('RGB')
+
+        label = 1-lam
+        return {'image': mix_image, 'label': label}
 
 class ToTensor(object):
     def __call__(self, sample):
